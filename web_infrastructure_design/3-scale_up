@@ -3,33 +3,30 @@ Scale Up
 
 Overview
 --------
-This builds on the secured and monitored infrastructure by scaling up
-to 4 servers total: 2 load balancers (configured as a cluster), and
-2 servers where each component (web server, application server, and
-database) is now split onto its own dedicated server.
+This builds on the secured and monitored setup by scaling up to 4
+servers total: 2 load balancers (set up as a cluster), plus 2 servers
+where each piece (web server, app server, database) now gets its own
+dedicated server instead of sharing one.
 
-Components added and why
+What got added, and why
 -------------------------
-- 1 additional load balancer (HAProxy), clustered with the existing
-  one: removes the load balancer as a SPOF. If one load balancer
-  fails, the other can take over, since they are configured together
-  as a cluster (e.g. active-active or active-passive) sharing a
-  virtual IP.
-- 1 additional server, and splitting the web server, application
-  server, and database onto their own dedicated servers: each
-  component now has dedicated CPU, memory, and disk resources, so a
-  spike in one component (e.g. the database) no longer impacts the
-  performance of the others (e.g. the web/app server). It also allows
-  each layer to be scaled independently based on its own needs.
+- 1 more load balancer (HAProxy), clustered with the first one:
+  gets rid of the load balancer as a weak point. If one goes down,
+  the other takes over, since they're set up together as a cluster
+  (active-active or active-passive) sharing a virtual IP.
+- 1 more server, splitting the web server, app server, and database
+  onto their own dedicated machines: each piece now gets its own
+  CPU, memory, and disk. So if one (say, the database) gets hit hard,
+  it doesn't drag down the others. It also means you can scale each
+  layer on its own, based on what it actually needs.
 
-Summary of why each element is added
+Quick summary of why each piece was added
 --------------------------------------
-- 2nd load balancer: eliminates the load balancer SPOF and allows
-  continuous availability of the entry point to the infrastructure.
-- Dedicated web server machine: can be scaled/tuned purely for
-  handling HTTP requests and static content.
-- Dedicated application server machine: can be scaled/tuned purely
-  for running the business logic, independent of web server load.
-- Dedicated database machine: can be scaled/tuned purely for data
-  storage and retrieval performance, isolated from the web/app layer
-  load.
+- 2nd load balancer: removes the load balancer as a weak point, keeps
+  the entry point to the site always available.
+- Dedicated web server machine: can be tuned/scaled just for handling
+  HTTP requests and static files.
+- Dedicated app server machine: can be tuned/scaled just for running
+  the app's logic, without the web server's load affecting it.
+- Dedicated database machine: can be tuned/scaled just for storing
+  and retrieving data, separate from the web/app load.

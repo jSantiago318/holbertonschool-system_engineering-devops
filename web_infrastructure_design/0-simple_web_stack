@@ -3,86 +3,75 @@ Simple Web Stack
 
 Overview
 --------
-This is a one-server web infrastructure that hosts the website
-www.foobar.com. It is composed of a single server running a LAMP-style
-stack: Nginx (web server), an application server, the application code,
-and a MySQL database.
+This is a website setup using just one server. It hosts
+www.foobar.com and runs a basic LAMP-style stack: Nginx (web server),
+an application server, the app's code, and a MySQL database.
 
 User flow
 ---------
 1. A user opens a browser and types www.foobar.com.
-2. The browser asks a DNS resolver to translate www.foobar.com into an
-   IP address.
-3. The DNS resolver returns the IP address 8.8.8.8 (the IP associated
-   with the www A record for the foobar.com domain).
-4. The browser sends an HTTP(S) request to 8.8.8.8.
-5. Nginx (the web server) on the server receives the request.
-6. Nginx forwards the request to the application server.
-7. The application server executes the application code, which may
-   query the MySQL database to retrieve or store data.
-8. The application server returns a response to Nginx, which sends it
-   back to the user's browser.
-9. The browser renders the website for the user.
+2. The browser asks DNS to find the IP address for that name.
+3. DNS replies with 8.8.8.8 (the IP set up for the "www" record).
+4. The browser sends a request to 8.8.8.8.
+5. Nginx (the web server) on that server gets the request.
+6. Nginx passes the request to the application server.
+7. The application server runs the code, and talks to the MySQL
+   database if it needs data.
+8. The application server sends the result back to Nginx, which sends
+   it back to the browser.
+9. The browser shows the website to the user.
 
 Components
 ----------
 - Domain name: foobar.com, with a "www" record pointing to 8.8.8.8.
-- 1 server, which contains:
+- 1 server, which has:
   - 1 web server: Nginx
   - 1 application server
-  - 1 codebase (application files)
+  - 1 codebase (the app's files)
   - 1 database: MySQL
 
 Explanations
 ------------
 What is a server?
-A server is a physical or virtual machine that provides a service -
-in this case hosting a website - to other machines (clients) over a
-network.
+A server is a machine (physical or virtual) that provides a service -
+here, hosting a website - to other machines over a network.
 
-What is the role of the domain name?
-A domain name (foobar.com) is a human-readable name that maps to an IP
-address, so users don't need to remember numeric addresses to reach a
-website.
+What is the domain name for?
+A domain name (foobar.com) is an easy-to-remember name that points to
+an IP address, so people don't have to memorize numbers to visit a
+site.
 
 What type of DNS record is "www" in www.foobar.com?
-It is an A record, which maps a hostname to an IPv4 address (8.8.8.8).
+It's an A record - it points a name to an IPv4 address (8.8.8.8).
 
-What is the role of the web server?
-The web server (Nginx) accepts incoming HTTP/HTTPS requests from
-clients and either serves static content directly or forwards the
-request to the application server for dynamic content.
+What does the web server do?
+The web server (Nginx) takes incoming requests and either answers them
+directly (for static files) or passes them along to the application
+server (for dynamic content).
 
-What is the role of the application server?
-The application server executes the business logic of the
-application - running the code that generates dynamic content,
-communicating with the database if needed, and returning the response
-to the web server.
+What does the application server do?
+It runs the app's actual logic - the code that builds the page,
+talks to the database if needed, and sends back a response.
 
-What is the role of the database?
-The database (MySQL) stores, organizes, and retrieves the data used
-by the application (e.g. user accounts, articles, products).
+What does the database do?
+The database (MySQL) stores and manages the app's data (user
+accounts, posts, products, etc.) and lets the app read/write it.
 
-What is the server using to communicate with the user's computer?
-The server communicates with the user's computer using the HTTP (or
-HTTPS) protocol over TCP/IP.
+How does the server talk to the user's computer?
+It uses the HTTP (or HTTPS) protocol, which runs on top of TCP/IP.
 
-Issues with this infrastructure
---------------------------------
+Issues with this setup
+------------------------
 SPOF (Single Point of Failure):
-Because there is only one server, if it goes down (hardware failure,
-crash, etc.), the entire website becomes unavailable - there is no
-redundancy.
+There's only one server. If it goes down (crash, hardware failure),
+the whole website goes down too - nothing else is there to take over.
 
-Downtime when maintenance is needed:
-Since the web server, application server, and database all live on
-the same machine, any maintenance (e.g. deploying new code, restarting
-the web server) requires taking the whole stack down temporarily,
-causing downtime for users.
+Downtime during maintenance:
+Everything (web server, app server, database) is on the same machine.
+So any update - like deploying new code or restarting the web server
+- means taking the whole site down for a bit.
 
-Cannot scale if there is too much incoming traffic:
-A single server has a fixed amount of CPU, memory, and network
-capacity. If traffic increases beyond what that server can handle,
-there is no way to add more capacity (no load balancing, no
-additional servers), so the website will slow down or become
-unresponsive.
+Can't handle a traffic spike:
+One server only has so much CPU, memory, and bandwidth. If traffic
+goes above what it can handle, there's no backup server or load
+balancer to help out, so the site gets slow or stops responding.

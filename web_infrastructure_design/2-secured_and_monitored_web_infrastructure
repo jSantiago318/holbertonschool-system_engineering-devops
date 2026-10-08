@@ -3,74 +3,71 @@ Secured and Monitored Web Infrastructure
 
 Overview
 --------
-This builds on the three-server distributed infrastructure
-(load balancer + 2 servers with web server, app server, codebase, and
-database) by adding security and monitoring: 3 firewalls, an SSL
-certificate for HTTPS, and 3 monitoring clients.
+This builds on the three-server setup (load balancer + 2 servers, each
+with a web server, app server, code, and database) by adding
+security and monitoring: 3 firewalls, an SSL certificate for HTTPS,
+and 3 monitoring clients.
 
-Components added and why
+What got added, and why
 -------------------------
 - 3 firewalls (one in front of the load balancer, one on each of the
-  2 servers): each component is protected individually, so that even
-  if traffic reaches the network, unauthorized ports/protocols are
-  blocked before reaching the actual services.
-- 1 SSL certificate (installed on the load balancer, terminating
-  HTTPS there): allows the website to be served securely over HTTPS,
-  encrypting traffic between the user and the infrastructure.
+  2 servers): each piece gets its own protection, so even if traffic
+  reaches the network, unwanted ports/connections get blocked before
+  hitting the actual services.
+- 1 SSL certificate (on the load balancer, where HTTPS ends):
+  lets the site run over HTTPS, encrypting traffic between the user
+  and the infrastructure.
 - 3 monitoring clients (one on the load balancer, one on each server):
-  each component reports its own metrics (CPU, memory, disk, traffic,
-  etc.) to the monitoring service, giving visibility into the health
-  of every part of the infrastructure.
+  each piece reports its own stats (CPU, memory, disk, traffic) to the
+  monitoring service, so you can see the health of everything.
 
 What are firewalls for?
-A firewall controls incoming and outgoing network traffic based on
-defined security rules, blocking unauthorized access while allowing
-legitimate traffic through - protecting the servers from malicious or
-unwanted connections.
+A firewall controls what traffic can come in and go out, based on
+rules you set - blocking bad/unwanted traffic while letting the good
+stuff through. It protects the servers from unwanted connections.
 
-Why is the traffic served over HTTPS?
-HTTPS encrypts the data exchanged between the user's browser and the
-server, protecting it from eavesdropping, interception, or tampering
-by third parties (e.g. on public Wi-Fi), and verifies the identity of
-the server via the SSL certificate.
+Why serve traffic over HTTPS?
+HTTPS encrypts the data between the user's browser and the server, so
+it can't be easily read or messed with by someone snooping on the
+connection (like on public Wi-Fi). It also confirms the server is who
+it says it is, via the SSL certificate.
 
-What is monitoring used for?
-Monitoring is used to track the health, performance, and availability
-of the infrastructure in real time - detecting issues (high CPU,
-downtime, slow response times, errors) early so they can be addressed
-before they significantly impact users.
+What's monitoring for?
+Monitoring tracks the health, performance, and uptime of the
+infrastructure in real time - so you can catch problems (high CPU,
+downtime, slow responses, errors) early, before they really hurt
+users.
 
 How does the monitoring tool collect data?
-A monitoring client (agent) is installed on each server/component. It
-collects local metrics (CPU, memory, disk, network, custom app
-metrics) and periodically sends (pushes) that data to the monitoring
-service, where it can be visualized and alerted on.
+A small agent (monitoring client) runs on each server. It gathers
+local stats (CPU, memory, disk, network, app-specific metrics) and
+sends that data to the monitoring service on a regular basis, where
+you can view it and set up alerts.
 
-Monitoring web server QPS (Queries Per Second)
-To monitor QPS, you would set up a custom metric/data collector that
-specifically tracks the number of requests the web server (Nginx)
-handles per second, and send that custom metric to the monitoring
-service (e.g. by parsing the Nginx logs or using a plugin that exposes
-request-rate metrics) so it can be graphed and alerted on.
+Monitoring the web server's QPS (Queries Per Second)
+To track QPS, you'd set up a custom metric that counts how many
+requests Nginx handles per second (e.g. by reading the Nginx logs or
+using a plugin that exposes that stat), then send that number to the
+monitoring service so you can graph it and get alerted if it spikes
+or drops.
 
-Issues with this infrastructure
+Issues with this setup
 --------------------------------
-Why is terminating SSL at the load balancer level an issue?
+Why is ending SSL at the load balancer a problem?
 Traffic between the load balancer and the backend servers is no
-longer encrypted (it is decrypted at the load balancer), so if an
-attacker gains access to the internal network, they can see that
-internal traffic in plain text.
+longer encrypted (it gets decrypted at the load balancer). So if
+someone gets into the internal network, they could read that traffic
+in plain text.
 
-Why is having only one MySQL server capable of accepting writes an issue?
-That single write-capable (Primary) database server is a SPOF: if it
-fails, no new data can be written anywhere in the system until it is
-restored or a Replica is manually/automatically promoted, causing a
-service disruption for any write operation.
+Why is having only one MySQL server that can accept writes a problem?
+That one write-capable (Primary) database is a weak point - if it
+goes down, nothing can be written anywhere until it's fixed or a
+Replica gets promoted to take over, which disrupts any write
+operation in the meantime.
 
-Why might having servers with all the same components be a problem?
-When every server runs the web server, application server, and
-database together, a spike in load or resource usage caused by one
-component (e.g. the database) can degrade or crash the other
-components on the same server (e.g. the web/app server), since they
-are all competing for the same CPU, memory, and disk resources. It
-also makes it harder to scale or secure each component independently.
+Why might having all the same components on every server be a problem?
+If every server runs the web server, app server, and database
+together, a spike from one of them (say, the database working hard)
+can slow down or crash the others on that same machine, since they're
+all fighting over the same CPU, memory, and disk. It also makes it
+harder to scale or secure each piece on its own.

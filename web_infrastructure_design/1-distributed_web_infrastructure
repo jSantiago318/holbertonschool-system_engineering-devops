@@ -3,76 +3,69 @@ Distributed Web Infrastructure
 
 Overview
 --------
-This is a three-server web infrastructure hosting www.foobar.com:
-1 load balancer (HAProxy) and 2 servers, each containing a web server
-(Nginx), an application server, the application code, and a MySQL
-database (configured as a Primary-Replica cluster).
+This setup uses three servers for www.foobar.com: 1 load balancer
+(HAProxy) and 2 servers. Each of the 2 servers has its own web server
+(Nginx), application server, app code, and MySQL database (set up as
+Primary-Replica).
 
-Components added and why
+What got added, and why
 -------------------------
-- Load balancer (HAProxy): distributes incoming traffic across the two
-  servers so no single server is overwhelmed, and removes the
-  single-server SPOF for traffic handling.
-- 2nd server (web server + app server + codebase + database): adds
-  redundancy - if one server goes down, the other can continue to
-  serve traffic, improving availability and allowing horizontal
-  scaling.
-- Primary-Replica database setup: one database (Primary) handles
-  writes, and the other (Replica) handles reads, improving
-  performance and providing a backup copy of the data.
+- Load balancer (HAProxy): spreads incoming traffic across both
+  servers so one server doesn't get overloaded, and removes the
+  "one server handles everything" weak point.
+- A 2nd server (web server + app server + code + database): gives
+  backup - if one server goes down, the other keeps things running.
+  It also lets you scale out (add more servers) instead of just up.
+- Primary-Replica database setup: one database (Primary) handles all
+  writes, the other (Replica) handles reads. This spreads out the
+  work and gives you a backup copy of the data.
 
 Load balancer algorithm
 ------------------------
-The load balancer is configured with the Round Robin algorithm: each
-new incoming request is sent to the next server in the list, cycling
-back to the first server after reaching the last one. This spreads
-traffic evenly across both servers.
+It's set up with Round Robin: each new request goes to the next
+server in line, then loops back to the first once it reaches the end.
+That way traffic is spread evenly across both servers.
 
 Active-Active vs Active-Passive
 --------------------------------
-This setup is Active-Active: both servers behind the load balancer are
-actively running and receiving traffic at the same time.
-In an Active-Passive setup, only one server (active) handles traffic
-while the other (passive) stays idle as a standby, only taking over if
-the active server fails.
-The difference: Active-Active uses all servers simultaneously (better
-resource usage), while Active-Passive keeps a server in reserve purely
-for failover (simpler, but wastes idle capacity).
+This is Active-Active: both servers are live and handling traffic at
+the same time.
+In Active-Passive, only one server (active) handles traffic while the
+other (passive) just sits there as backup, kicking in only if the
+active one fails.
+Difference: Active-Active uses both servers all the time (so
+resources aren't wasted), while Active-Passive keeps one server idle
+just in case (simpler, but that server sits unused most of the time).
 
-Primary-Replica (Master-Slave) database cluster
+Primary-Replica (Master-Slave) database setup
 --------------------------------------------------
-In a Primary-Replica cluster, the Primary node receives all write
-operations (INSERT, UPDATE, DELETE). Those changes are then
-replicated (copied) to one or more Replica nodes. Replica nodes keep
-an up-to-date copy of the data and are typically used to serve read
-operations, which reduces the load on the Primary.
+The Primary handles every write (INSERT, UPDATE, DELETE). Those
+changes then get copied over to the Replica(s). The Replica keeps an
+updated copy of the data and usually handles reads, which takes load
+off the Primary.
 
-Difference between Primary and Replica (from the application's view)
+Primary vs Replica, from the app's point of view
 -----------------------------------------------------------------------
-The application sends all write queries to the Primary node, and can
-send read queries to either the Primary or a Replica node. The
-application must be configured to know which node is the Primary (for
-writes) and which are Replicas (for reads) - writing to a Replica is
-not allowed/supported.
+The app sends all writes to the Primary. It can send reads to either
+the Primary or a Replica. The app needs to know which one is the
+Primary (for writes) and which are Replicas (for reads) - you can't
+write to a Replica.
 
-Issues with this infrastructure
+Issues with this setup
 --------------------------------
-Where are the SPOFs?
-- The load balancer itself is a SPOF: if it goes down, no traffic can
-  reach either server.
-- The Primary database node is a SPOF for writes: if it goes down,
-  no new write operations can be processed until a Replica is
-  promoted.
+Where are the weak points (SPOFs)?
+- The load balancer is one: if it goes down, no traffic gets through
+  to either server.
+- The Primary database is one too: if it goes down, no writes can
+  happen until a Replica gets promoted to take over.
 
 Security issues:
-- No firewall: the servers are exposed to any traffic from the
-  internet, including malicious traffic, with nothing filtering or
-  blocking unwanted connections.
-- No HTTPS: traffic between the user and the servers is unencrypted
-  (plain HTTP), meaning data (including sensitive data) can be
-  intercepted or tampered with in transit.
+- No firewall: anything from the internet can reach the servers,
+  nothing is filtering out bad traffic.
+- No HTTPS: traffic between the user and the servers isn't encrypted,
+  so data could be intercepted or messed with along the way.
 
 No monitoring:
-There is no monitoring in place, so there's no visibility into server
-health, performance, traffic, or errors - issues could go unnoticed
-until the website is already down or degraded for users.
+There's nothing watching server health, performance, or errors - so
+problems might not get noticed until the site is already having
+issues for users.
